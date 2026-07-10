@@ -1,7 +1,7 @@
+//mod bin_container
 pub fn add_bits(a: u8, b: u8, carry: u8) -> (u8, u8) {
     let sum = a ^ b ^ carry;
     let new_carry = (a & b) | (a & carry) | (b & carry);
-
     (sum, new_carry)
 }
 
@@ -11,38 +11,46 @@ pub fn sub_bits(a: u8, b: u8, borrow: u8) -> (u8, u8) {
     (diff, new_borrow)
 }
 
-pub fn cal_u8(&mut self, enter_a: u8, enter_b: u8, borrow: u8, new_address: u8) -> (u8, u8) {
+pub fn cal_u8(enter_a: u8, enter_b: u8, borrow: u8) -> (u8, u8) {
     let mut result = 0u8;
     let mut carry = 0u8;
 
     for i in 0..8 {
         let abit = (enter_a >> i) & 1;
         let bbit = (enter_b >> i) & 1;
-        if borrow == 0 {
-            let (sum, new_carry) = add_bits(abit, bbit, carry);
+
+        let (bit_result, new_carry) = if borrow == 0 {
+            add_bits(abit, bbit, carry)
         } else {
-            let (sum, new_carry) = sub_bits(abit, bbit, carry);
-        }
-        result |= sum << i;
+            sub_bits(abit, bbit, carry)
+        };
+
+        result |= bit_result << i;
         carry = new_carry;
     }
+
     (result, carry)
 }
+
+pub fn increment_address(address: u8) -> u8 {
+    cal_u8(address, 1, 0).0
+}
 // çarpımların optimizasyonu
-pub fn mul_u8(&mut self, mut enter_1: u8, mut enter_2: u8, dst: u8) -> u8 {
-    let mut result = 0;
+pub fn mul_u8(mut enter_1: u8, mut enter_2: u8, result_address: &mut u64) -> u8 {
+    let mut result = 0u8;
 
     while enter_2 != 0 {
         if (enter_2 & 1) != 0 {
-            result = cal_u8(result, enter_1, 0, 0b00);
+            (result, _) = cal_u8(result, enter_1, 0);
         }
         enter_1 <<= 1;
         enter_2 >>= 1;
     }
+    *result_address = result as u64;
     result
 }
 //bölmelerin optimizasyonunda bölen kalan
-pub fn div_mod_u8(&mut self, dividend: u8, divisor: u8) -> (u8, u8) {
+pub fn div_mod_u8(dividend: u8, divisor: u8) -> (u8, u8) {
     if divisor == 0 {
         panic!("Sıfıra bölme hatası");
     }
@@ -55,7 +63,7 @@ pub fn div_mod_u8(&mut self, dividend: u8, divisor: u8) -> (u8, u8) {
         remainder |= (dividend >> i) & 1;
 
         if remainder >= divisor {
-            remainder = cal_u8(remainder, divisor, 1, 0b01).0;
+            remainder = cal_u8(remainder, divisor, 1).0;
             quotient |= 1 << i;
         }
     }

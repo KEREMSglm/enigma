@@ -1,7 +1,19 @@
-mod src;
+mod bin_container;
+mod bin_math;
 
-fn main() {}
+use bin_container::Memory;
 
+fn main() {
+    let mut memory = Memory::new(256);
+
+    let addr = memory.alloc(4).unwrap();
+
+    memory.write(addr, &[0b10001001, 20, 30, 40]);
+
+    let data = memory.read(addr, 4).unwrap();
+
+    println!("{:?}", data);
+}
 //fn add_bits(a: u8, b: u8, carry: u8) -> (u8, u8) {
 //    let sum = a ^ b ^ carry;
 //
